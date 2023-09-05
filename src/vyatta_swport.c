@@ -46,7 +46,7 @@
 #include <rte_string_fns.h>
 #include <rte_errno.h>
 #include <rte_ethdev.h>
-#include <rte_ethdev_vdev.h>
+//#include <ethdev_vdev.h>
 #include <rte_kvargs.h>
 #include <rte_atomic.h>
 #include <rte_errno.h>

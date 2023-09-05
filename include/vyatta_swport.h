@@ -10,7 +10,7 @@
 #include <rte_config.h>
 #include <rte_mbuf.h>
 #include <rte_ethdev.h>
-#include <rte_ethdev_driver.h>
+//#include <rte_ethdev_driver.h>
 
 #ifdef __cplusplus
 extern "C" {
