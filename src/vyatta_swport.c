@@ -37,20 +37,17 @@
  */
 
 #include <arpa/inet.h>
-#include <rte_log.h>
-#include <rte_mbuf.h>
+#include <rte_atomic.h>
+#include <rte_errno.h>
+#include <rte_ethdev_core.h>
 #include <rte_ethdev.h>
+#include <rte_kvargs.h>
+#include <rte_log.h>
 #include <rte_malloc.h>
+#include <rte_mbuf.h>
 #include <rte_memcpy.h>
 #include <rte_memzone.h>
 #include <rte_string_fns.h>
-#include <rte_errno.h>
-#include <rte_ethdev.h>
-//#include <ethdev_vdev.h>
-#include <rte_kvargs.h>
-#include <rte_atomic.h>
-#include <rte_errno.h>
-#include <rte_log.h>
 #include <rte_version.h>
 #include "../include/vyatta_swport.h"
 #include "onie_tlvinfo.h"
