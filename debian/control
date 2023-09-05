@@ -16,7 +16,7 @@ Description: Vyatta switch ports shared objects
 Package: libvyatta-dpdk-swport-dev
 Architecture: any
 Section: libdevel
-Depends: ${misc:Depends}, libvyatta-dpdk-swport1 (= ${binary:Version}),
+Depends: ${misc:Depends}, libvyatta-dpdk-swport1,
 Description: Vyatta switch ports headers
  Shared library headers augmenting DPDK to add switch ports.
 
