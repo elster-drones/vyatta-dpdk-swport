@@ -39,8 +39,10 @@
 #include <arpa/inet.h>
 #include <rte_atomic.h>
 #include <rte_errno.h>
-#include <rte_ethdev_core.h>
 #include <rte_ethdev.h>
+#include <ethdev_driver.h>
+#include <ethdev_vdev.h>
+#include <bus_vdev_driver.h>
 #include <rte_kvargs.h>
 #include <rte_log.h>
 #include <rte_malloc.h>
@@ -51,6 +53,10 @@
 #include <rte_version.h>
 #include "../include/vyatta_swport.h"
 #include "onie_tlvinfo.h"
+
+/* Provided by vyatta-dataplane (include/fal_plugin.h) */
+void fal_pkt_mark_set_framed(struct rte_mbuf *m);
+bool fal_pkt_mark_is_framed(struct rte_mbuf *m);
 
 #define SWP_LOG(l, t, ...) rte_log(RTE_LOG_ ## l, \
 				   RTE_LOGTYPE_USER1, # t ": " __VA_ARGS__)
@@ -264,14 +270,14 @@ switch_port_tx(void *q, struct rte_mbuf **bufs, uint16_t nb_bufs)
 					       prep_header_change_bytes) != 0)
 				goto drop;
 		mbuf = bufs[i];
-		if (mbuf->ol_flags & PKT_TX_VLAN_PKT &&
+		if (mbuf->ol_flags & RTE_MBUF_F_TX_VLAN &&
 		    !(sw_port->flags &
 		      SWITCH_PORT_FLAG_TX_FRAMER_VLAN_INSERT)) {
 			if (unlikely(rte_vlan_insert(&mbuf))) {
 				SWP_ERROR("Insert vlan for packet %p\n", mbuf);
 				goto drop;
 			}
-			mbuf->ol_flags &= ~PKT_TX_VLAN_PKT;
+			mbuf->ol_flags &= ~RTE_MBUF_F_TX_VLAN;
 			bufs[i] = mbuf;
 		}
 
@@ -470,10 +476,9 @@ sw_port_dev_info(struct rte_eth_dev *dev,
 	dev_info->pci_dev = NULL;
 #else
 	dev_info->tx_offload_capa =
-		DEV_TX_OFFLOAD_MULTI_SEGS | DEV_TX_OFFLOAD_VLAN_INSERT;
+		RTE_ETH_TX_OFFLOAD_MULTI_SEGS | RTE_ETH_TX_OFFLOAD_VLAN_INSERT;
 	dev_info->rx_offload_capa =
-		DEV_RX_OFFLOAD_SCATTER | DEV_RX_OFFLOAD_JUMBO_FRAME |
-		DEV_RX_OFFLOAD_VLAN_STRIP;
+		RTE_ETH_RX_OFFLOAD_SCATTER | RTE_ETH_RX_OFFLOAD_VLAN_STRIP;
 #endif
 
 	/*
@@ -628,16 +633,16 @@ sw_port_xstats_get_by_id(struct rte_eth_dev *dev,
 
 static int
 sw_port_xstats_get_names_by_id(struct rte_eth_dev *dev,
-			       struct rte_eth_xstat_name *xstats_names,
 			       const uint64_t *ids,
+			       struct rte_eth_xstat_name *xstats_names,
 			       unsigned int size)
 {
 	struct sw_port *port = dev->data->dev_private;
 
 	if (port->fal_dev_ops->xstats_get_names_by_id)
-		return (port->fal_dev_ops->xstats_get_names_by_id)(dev,
+		return (port->fal_dev_ops->xstats_get_names_by_id)(dev, ids,
 								   xstats_names,
-								   ids, size);
+								   size);
 	return -ENOTSUP;
 }
 
@@ -681,18 +686,18 @@ sw_port_default_mac_addr_set(struct rte_eth_dev *dev,
 }
 
 static void
-sw_port_rx_queue_release(void *q)
+sw_port_rx_queue_release(struct rte_eth_dev *dev, uint16_t qid)
 {
-	struct switch_port_queue *rxq = q;
+	struct switch_port_queue *rxq = dev->data->rx_queues[qid];
 
-	if (rxq->ring)
+	if (rxq && rxq->ring)
 		rte_ring_free(rxq->ring);
 }
 
 static void
-sw_port_tx_queue_release(void *q)
+sw_port_tx_queue_release(struct rte_eth_dev *dev, uint16_t qid)
 {
-	struct switch_port_queue *txq = q;
+	struct switch_port_queue *txq = dev->data->tx_queues[qid];
 
 	if (txq && txq->ring)
 		rte_ring_free(txq->ring);
@@ -919,9 +924,9 @@ sw_port_vdev_create(struct rte_vdev_device *dev,
 	/*
 	 * Place link into a known starting state
 	 */
-	data->dev_link.link_speed  = ETH_LINK_SPEED_AUTONEG;
-	data->dev_link.link_duplex = ETH_LINK_FULL_DUPLEX;
-	data->dev_link.link_status = ETH_LINK_DOWN;
+	data->dev_link.link_speed  = RTE_ETH_LINK_SPEED_AUTONEG;
+	data->dev_link.link_duplex = RTE_ETH_LINK_FULL_DUPLEX;
+	data->dev_link.link_status = RTE_ETH_LINK_DOWN;
 
 	data->mac_addrs = &switch_port->address;
 
@@ -1003,12 +1008,12 @@ sw_port_pmd_uninit(struct rte_vdev_device *dev)
 
 	if (eth_dev->data->tx_queues) {
 		for (i = 0; i < eth_dev->data->nb_tx_queues; i++)
-			sw_port_tx_queue_release(eth_dev->data->tx_queues[i]);
+			sw_port_tx_queue_release(eth_dev, i);
 	}
 
 	if (eth_dev->data->rx_queues) {
 		for (i = 0; i < eth_dev->data->nb_rx_queues; i++)
-			sw_port_rx_queue_release(eth_dev->data->rx_queues[i]);
+			sw_port_rx_queue_release(eth_dev, i);
 	}
 
 	free(switch_port->name);
