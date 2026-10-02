@@ -1,3 +1,9 @@
+vyatta-dpdk-swport (0.1.29) unstable; urgency=medium
+
+  * Rebuild against the DPDK fork with DANOS port and NUMA limits.
+
+ -- Erik Ziegenbalg <erikziege@gmail.com>  Fri, 02 Oct 2026 02:09:00 +0000
+
 vyatta-dpdk-swport (0.1.28) unstable; urgency=medium
 
   * Build against DPDK 24.11 (elster-drones/dpdk 24.11.x, which installs

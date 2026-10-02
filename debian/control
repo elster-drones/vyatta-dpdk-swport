@@ -3,7 +3,7 @@ Section: net
 Priority: optional
 Maintainer: Vyatta Package Maintainers <DL-vyatta-help@att.com>
 Build-Depends: debhelper (>= 9),
-               libdpdk-dev (>= 24.11.4-0+deb13u1+elster3),
+               libdpdk-dev (>= 24.11.4-0+deb13u1+elster4),
                pkg-config,
 Standards-Version: 3.9.8
 
