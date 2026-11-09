@@ -4,9 +4,10 @@
 # SPDX-License-Identifier: LGPL-2.1-only
 #
 
-CFLAGS += $(shell pkg-config --cflags libdpdk) -fPIC -O3 -DALLOW_INTERNAL_API
-LDFLAGS += -Wl,--as-needed $(shell pkg-config --libs libdpdk) -lrte_bus_vdev -Wl,--version-script=vyatta-dpdk-swport.map
-LIBDIR := $(DESTDIR)/usr/lib/$(shell dpkg-architecture -qDEB_BUILD_MULTIARCH)
+PKG_CONFIG ?= pkg-config
+CFLAGS += $(shell $(PKG_CONFIG) --cflags libdpdk) -fPIC -O3 -DALLOW_INTERNAL_API
+LDFLAGS += -Wl,--as-needed $(shell $(PKG_CONFIG) --libs libdpdk) -lrte_bus_vdev -Wl,--version-script=vyatta-dpdk-swport.map
+LIBDIR := $(DESTDIR)/usr/lib/$(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 INCDIR := $(DESTDIR)/usr/include/vyatta-dataplane
 CFILES := src/vyatta_swport.c
 OFILES := $(patsubst %.c,%.o,$(CFILES))
