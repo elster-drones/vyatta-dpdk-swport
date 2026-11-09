@@ -36,6 +36,7 @@
  *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <stdlib.h>
 #include <arpa/inet.h>
 #include <rte_atomic.h>
 #include <rte_errno.h>
